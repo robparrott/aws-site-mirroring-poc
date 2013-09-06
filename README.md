@@ -15,7 +15,7 @@ Shell script which uses the various typical command line tools from Linux/UNIX, 
 - git
 - wget 
 - s3cmd
-- 
+
 
 Usage
 -----
