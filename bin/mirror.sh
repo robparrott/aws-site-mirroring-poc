@@ -35,12 +35,12 @@ function sync_bucket
 {
   local website=${1}
   local bucket=$( website_to_hostname ${website} )
-  local files=${2}
+  local files=$( get_changed_files )
   for file in $files; do
     file=$(  echo $file | sed 's#^./##' )
     local site=$( echo $file | awk -F/ '{print $1}' )
     local obj_name=$( echo ${file} |  sed 's/\/__content__$//' )    
-    mime_type=$( mime_type $file  )
+    mime_type=$( mime_type "$file"  )
     s3cmd_opts="  --acl-public --no-preserve --mime-type=${mime_type}" #--add-header='Cache-Control:public, max-age=86400' 
     cmd="s3cmd ${s3cmd_opts} put ${file} s3://${bucket}/${obj_name} "
     echo $cmd
@@ -100,12 +100,12 @@ function mirror_site
   qfiles=$( query_url_files )
   echo Query files .... $qfiles
 
-#  for $qf in ${qfiles}; do
-#    short_name=$( echo $qf | sed 's/\?.*$//' )
-#    if ! [ -f $short_name ]; then
-#      cp $qf $short_name
-#    fi
-#  done
+  for $qf in ${qfiles}; do
+    short_name=$( echo $qf | sed 's/\?.*$//' )
+    if ! [ -f "$short_name" ]; then
+      cp "$qf" "$short_name"
+    fi
+  done
        
   # edit lihks to remove absolute refs to this site
   target_files=$( grep -H -R =\"http://${hostname}/ * | awk -F: '{print $1}' | sort -u   )
@@ -121,7 +121,7 @@ function get_changed_files
 {
 #  previous_hash=$( git log | grep "^commit " | sed 's/commit *//' | head -2 | tail -1 )
 #  changed_files=$( git diff ${previous_hash} HEAD |  grep "^diff --git" | awk '{print $3}' | sed 's#a/##' )
-  changed_files=$( find . -type f  | grep -v .git )
+  changed_files=$( find . -type f  | grep -v .git/ )
   echo $changed_files
 }
 
@@ -131,8 +131,7 @@ cd ${DATA_DIR}
 pwd
 
 mirror_site ${WEBSITE}
-FILES=$( get_changed_files )
-sync_bucket ${WEBSITE} "${FILES}"
+sync_bucket ${WEBSITE} 
 
 #echo $FILES
 
